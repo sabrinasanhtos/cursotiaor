@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌾 Colheitas</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body { background-color: #f8f9fa; font-family: 'Segoe UI'; padding: 20px; }
+    .container { max-width: 600px; }
+    .card { border-radius: 15px; box-shadow: 0 3px 8px rgba(0,0,0,0.15); padding: 20px; }
+    .btn { width: 100%; font-size: 1.1rem; padding: 12px; border-radius: 12px; }
+    #listaColheitas { margin-top: 25px; }
+  </style>
+</head>
+<body>
+  <div class="container mt-4">
+    <div class="text-center mb-4">
+      <h3>🌾 Controle de Colheitas</h3>
+      <p class="text-muted">Interface estilo aplicativo</p>
+    </div>
+
+    <!-- FORM PRINCIPAL -->
+    <div class="card">
+      <div class="mb-3">
+        <label for="maquina" class="form-label">Selecione a Máquina</label>
+        <select id="maquina" class="form-select">
+          <option value="">Carregando...</option>
+        </select>
+      </div>
+
+      <button id="btnIniciar" class="btn btn-success mb-2">
+        <i class="bi bi-play-circle"></i> Iniciar Colheita
+      </button>
+
+      <button id="btnFinalizar" class="btn btn-danger" style="display:none;">
+        <i class="bi bi-stop-circle"></i> Finalizar Colheita
+      </button>
+    </div>
+
+    <!-- TABELA DE COLHEITAS -->
+    <div id="listaColheitas" class="mt-4">
+      <h5 class="mb-3 text-center">Colheitas Concluídas</h5>
+      <div class="table-responsive">
+        <table class="table table-striped align-middle text-center">
+          <thead class="table-dark">
+            <tr>
+              <th>ID</th>
+              <th>Máquina</th>
+              <th>Início</th>
+              <th>Fim</th>
+              <th>Duração</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaColheitas">
+            <tr><td colspan="6" class="text-muted">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_COLHEITAS = "http://127.0.0.1:8000/colheitas";
+    const API_MAQUINAS = "http://127.0.0.1:8000/maquinas/listar";
+
+    const tabela = document.querySelector("#tabelaColheitas");
+    const selectMaquina = document.querySelector("#maquina");
+    const btnIniciar = document.querySelector("#btnIniciar");
+    const btnFinalizar = document.querySelector("#btnFinalizar");
+
+    let colheitaAtiva = null;
+
+    // 🔹 Carregar máquinas
+    async function carregarMaquinas() {
+      try {
+        const resp = await fetch(API_MAQUINAS);
+        const maquinas = await resp.json();
+        selectMaquina.innerHTML = "<option value=''>Selecione...</option>";
+        maquinas.forEach(m => {
+          selectMaquina.innerHTML += `<option value="${m.id}">${m.modelo}</option>`;
+        });
+      } catch {
+        selectMaquina.innerHTML = "<option value=''>Erro ao carregar</option>";
+      }
+    }
+
+    // 🔹 Carregar colheitas concluídas
+    async function carregarColheitas() {
+      try {
+        const resp = await fetch(`${API_COLHEITAS}/listar`);
+        const colheitas = await resp.json();
+
+        tabela.innerHTML = "";
+        if (!Array.isArray(colheitas) || !colheitas.length) {
+          tabela.innerHTML = `<tr><td colspan="6" class="text-muted">Nenhuma colheita registrada.</td></tr>`;
+          return;
+        }
+
+        colheitas
+          .filter(c => c.status === "Concluída")
+          .forEach(c => {
+            tabela.innerHTML += `
+              <tr>
+                <td>${c.id}</td>
+                <td>${c.maquina_id || "-"}</td>
+                <td>${c.inicio ? new Date(c.inicio).toLocaleString() : "-"}</td>
+                <td>${c.fim ? new Date(c.fim).toLocaleString() : "-"}</td>
+                <td>${c.duracao_horas || "-"}</td>
+                <td>${c.status}</td>
+              </tr>`;
+          });
+      } catch (err) {
+        tabela.innerHTML = `<tr><td colspan="6" class="text-danger">Erro ao carregar colheitas</td></tr>`;
+        console.error(err);
+      }
+    }
+
+    // 🔹 Iniciar colheita
+    btnIniciar.addEventListener("click", async () => {
+      const maquinaId = selectMaquina.value;
+      if (!maquinaId) return alert("Selecione uma máquina primeiro.");
+
+      try {
+        const resp = await fetch(`${API_COLHEITAS}/iniciar`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ maquina_id: parseInt(maquinaId) })
+        });
+
+        const data = await resp.json();
+        console.log("Início resposta:", data);
+
+        if (resp.ok && data.colheita_id) {
+          alert("🚜 Colheita iniciada!");
+          colheitaAtiva = data.colheita_id;
+
+          selectMaquina.disabled = true;
+          btnIniciar.style.display = "none";
+          btnFinalizar.style.display = "block";
+        } else {
+          alert("Erro ao iniciar: " + JSON.stringify(data));
+        }
+      } catch (err) {
+        alert("Erro ao iniciar colheita: " + err);
+        console.error(err);
+      }
+    });
+
+    // 🔹 Finalizar colheita
+    btnFinalizar.addEventListener("click", async () => {
+      if (!colheitaAtiva) return alert("Nenhuma colheita ativa.");
+
+      try {
+        const resp = await fetch(`${API_COLHEITAS}/finalizar/${colheitaAtiva}`, {
+          method: "PUT"
+        });
+        const data = await resp.json();
+        console.log("Finalizar resposta:", data);
+
+        if (resp.ok) {
+          alert("✅ Colheita finalizada!");
+          colheitaAtiva = null;
+          selectMaquina.disabled = false;
+          btnFinalizar.style.display = "none";
+          btnIniciar.style.display = "block";
+          carregarColheitas();
+        } else {
+          alert("Erro: " + JSON.stringify(data));
+        }
+      } catch (err) {
+        alert("Erro ao finalizar colheita: " + err);
+        console.error(err);
+      }
+    });
+
+    carregarMaquinas();
+    carregarColheitas();
+  </script>
+</body>
+</html>

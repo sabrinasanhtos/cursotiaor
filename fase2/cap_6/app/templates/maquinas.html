@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🚜 Gerenciamento de Máquinas</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet" />
+  <style>
+    body { background-color: #f8f9fa; padding: 20px; }
+    .container { max-width: 1100px; }
+    .card { border-radius: 12px; margin-bottom: 30px; }
+    .btn-action { border: none; background: none; font-size: 1.2rem; }
+    .btn-edit { color: #0d6efd; }
+    .btn-delete { color: #dc3545; }
+    .btn-action:hover { opacity: 0.8; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2 class="text-center my-4">🚜 Cadastro de Máquinas</h2>
+
+    <!-- FORMULÁRIO -->
+    <div class="card shadow-sm p-4">
+      <form id="formMaquina">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Modelo</label>
+            <input type="text" id="modelo" class="form-control" placeholder="Ex: John Deere 5080" required />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Tipo</label>
+            <input type="text" id="tipo" class="form-control" placeholder="Ex: Colheitadeira" required />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Ano de Fabricação</label>
+            <input type="number" id="ano" class="form-control" placeholder="Ex: 2021" />
+          </div>
+        </div>
+        <div class="mt-4 text-end">
+          <button type="submit" id="btnSalvar" class="btn btn-success px-4">Salvar</button>
+          <button type="button" id="btnCancelar" class="btn btn-secondary px-4" style="display:none">Cancelar</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- LISTAGEM -->
+    <div class="card shadow-sm p-4">
+      <h5>Máquinas Cadastradas</h5>
+      <div class="table-responsive mt-3">
+        <table class="table table-striped" id="tabelaMaquinas">
+          <thead class="table-dark">
+            <tr>
+              <th>ID</th>
+              <th>Modelo</th>
+              <th>Tipo</th>
+              <th>Ano</th>
+              <th>Status</th>
+              <th class="text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="6" class="text-center text-muted">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      const API_URL = "http://127.0.0.1:8000/maquinas";
+      let editandoId = null;
+
+      const form = document.querySelector("#formMaquina");
+      const btnSalvar = document.querySelector("#btnSalvar");
+      const btnCancelar = document.querySelector("#btnCancelar");
+      const tabela = document.querySelector("#tabelaMaquinas tbody");
+
+      // 🔹 Área de mensagens
+      const alertContainer = document.createElement("div");
+      alertContainer.className = "my-3";
+      document.querySelector(".container").prepend(alertContainer);
+
+      function showAlert(data, type = "info") {
+        const msg = typeof data === "object" ? JSON.stringify(data, null, 2) : data;
+        alertContainer.innerHTML = `
+          <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            <pre class="mb-0">${msg}</pre>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>`;
+      }
+
+      // 🔹 Carregar máquinas
+      async function carregarMaquinas() {
+        try {
+          const resp = await fetch(`${API_URL}/listar`);
+          const data = await resp.json();
+          tabela.innerHTML = "";
+
+          if (!Array.isArray(data) || data.length === 0) {
+            tabela.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Nenhuma máquina cadastrada.</td></tr>`;
+            return;
+          }
+
+          data.forEach(m => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${m.id}</td>
+              <td>${m.modelo}</td>
+              <td>${m.tipo}</td>
+              <td>${m.ano_fabricacao || "-"}</td>
+              <td>${m.status ? "Ativa" : "Inativa"}</td>
+              <td class="text-center">
+                <button class="btn-action btn-edit" onclick="prepararEdicao(${m.id}, '${m.modelo}', '${m.tipo}', ${m.ano_fabricacao || '""'})">
+                  <i class="bi bi-pencil-square"></i>
+                </button>
+                <button class="btn-action btn-delete" onclick="excluir(${m.id})">
+                  <i class="bi bi-x-circle"></i>
+                </button>
+              </td>`;
+            tabela.appendChild(tr);
+          });
+        } catch (err) {
+          showAlert(err, "danger");
+        }
+      }
+
+      // 🔹 Editar
+      window.prepararEdicao = (id, modelo, tipo, ano) => {
+        document.querySelector("#modelo").value = modelo;
+        document.querySelector("#tipo").value = tipo;
+        document.querySelector("#ano").value = ano || "";
+        btnSalvar.textContent = "Atualizar";
+        btnCancelar.style.display = "inline-block";
+        editandoId = id;
+      };
+
+      // 🔹 Salvar ou atualizar
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const modelo = document.querySelector("#modelo").value.trim();
+        const tipo = document.querySelector("#tipo").value.trim();
+        const anoValor = document.querySelector("#ano").value.trim();
+        const body = JSON.stringify({
+          modelo,
+          tipo,
+          ...(anoValor && { ano_fabricacao: parseInt(anoValor) })
+        });
+
+        const method = editandoId ? "PUT" : "POST";
+        const url = editandoId ? `${API_URL}/editar/${editandoId}` : `${API_URL}/cadastrar`;
+
+        try {
+          const resp = await fetch(url, {
+            method,
+            headers: { "Content-Type": "application/json" },
+            body
+          });
+          const data = await resp.json();
+          showAlert(data, resp.ok ? "success" : "danger");
+        } catch (err) {
+          showAlert(err, "danger");
+        }
+
+        editandoId = null;
+        e.target.reset();
+        btnSalvar.textContent = "Salvar";
+        btnCancelar.style.display = "none";
+        carregarMaquinas();
+      });
+
+      // 🔹 Cancelar
+      btnCancelar.addEventListener("click", () => {
+        editandoId = null;
+        form.reset();
+        btnSalvar.textContent = "Salvar";
+        btnCancelar.style.display = "none";
+      });
+
+      // 🔹 Excluir
+      window.excluir = async (id) => {
+        if (!confirm("Deseja realmente excluir esta máquina?")) return;
+        try {
+          const resp = await fetch(`${API_URL}/excluir/${id}`, { method: "DELETE" });
+          const data = await resp.json();
+          showAlert(data, resp.ok ? "success" : "danger");
+          carregarMaquinas();
+        } catch (err) {
+          showAlert(err, "danger");
+        }
+      };
+
+      carregarMaquinas();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+# 🧱 Compilados e cache
+__pycache__/
+*/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.log
+_init_.py
+
+# 🧩 Ambientes virtuais e variáveis locais
+venv/
+*/venv/
+.env/
+*/.env/
+
+# 💻 Configurações de IDE
+.vscode/
+.idea/
+
+# 🗺️ Arquivos estáticos e mapas (para todos os projetos)
+app/static/*
+!app/static/.gitkeep
+*/app/static/*
+!*/app/static/.gitkeep
+*/app/static/maps/
+
+# 🧹 Arquivos temporários e de sistema
+*.html~
+*.tmp
+*.bak
+*.swp
+.DS_Store
+Thumbs.db

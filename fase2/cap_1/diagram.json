@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "author": "Anna Carolina",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht1",
+      "top": -114.9,
+      "left": -149.4,
+      "attrs": { "humidity": "9" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn1",
+      "top": 92.6,
+      "left": 172.8,
+      "attrs": { "color": "green", "xray": "1", "key": "p" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn2",
+      "top": 35,
+      "left": 144,
+      "attrs": { "color": "green", "xray": "1", "key": "n" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn3",
+      "top": 150.2,
+      "left": 220.8,
+      "attrs": { "color": "green", "xray": "1", "key": "k" }
+    },
+    {
+      "type": "wokwi-photoresistor-sensor",
+      "id": "ldr1",
+      "top": 51.2,
+      "left": -306.4,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-relay-module",
+      "id": "relay2",
+      "top": 313.4,
+      "left": 2.8,
+      "rotate": 90,
+      "attrs": {}
+    }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "dht1:VCC", "esp:3V3", "red", [ "v0" ] ],
+    [ "dht1:GND", "esp:GND.1", "black", [ "v0" ] ],
+    [ "dht1:SDA", "esp:4", "green", [ "v230.4", "h278.5", "v-86.4" ] ],
+    [ "esp:18", "btn2:1.l", "green", [ "h24.04", "v-67.2" ] ],
+    [ "btn1:1.l", "esp:19", "orange", [ "h-38.4", "v-9.6" ] ],
+    [ "btn3:1.l", "esp:21", "white", [ "h-105.6", "v-86.4" ] ],
+    [ "ldr1:VCC", "esp:3V3", "red", [ "h38.4", "v-48", "h100.61" ] ],
+    [ "ldr1:GND", "esp:GND.3", "black", [ "h28.8", "v191.6", "h230.4", "v-182.4" ] ],
+    [ "ldr1:AO", "esp:34", "blue", [ "h124.8", "v-29.5" ] ],
+    [ "relay2:GND", "esp:GND.1", "black", [ "v-38.4", "h-86", "v-76.8" ] ],
+    [ "relay2:VCC", "esp:5V", "red", [ "v-57.6", "h-86.4", "v-19.2" ] ],
+    [ "relay2:IN", "esp:5", "purple", [ "v-28.8", "h77", "v-134.4" ] ],
+    [ "btn2:2.r", "esp:GND.2", "black", [ "h9.8", "v-38.2" ] ],
+    [ "btn1:2.r", "esp:GND.2", "black", [ "h9.8", "v-105.4", "h-144" ] ],
+    [ "btn3:2.r", "esp:GND.2", "black", [ "h19.4", "v-182.2", "h-211.2" ] ]
+  ],
+  "dependencies": {}
+}
