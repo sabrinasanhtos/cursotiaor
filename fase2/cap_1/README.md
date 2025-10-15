@@ -89,13 +89,13 @@ Essas mensagens ajudam o usuário a entender exatamente o motivo de cada decisã
 ## 📸 **Imagens e Demonstração**
 
 ### Circuito no Wokwi  
-![Circuito Wokwi](fase2/cap_1/images/umidade.jpg)
+![Circuito Wokwi](images/umidade.jpg)
 
 ### Simulação no ESP32  
-![Simulação ESP32](fase2/cap_1/images/simulacao.jpg)
+![Simulação ESP32](images/simulacao.jpg)
 
 ### Saída do Monitor Serial  
-![Saída Serial](fase2/cap_1/images/saida_serial.jpg)
+![Saída Serial](images/saida_serial.jpg)
 
 ---
 
